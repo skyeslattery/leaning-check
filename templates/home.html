@@ -1,3 +1,4 @@
+<!-- home.html -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -26,19 +27,21 @@
     {% if history %}
     <h2>History</h2>
     <ul class="history-list">
-      {% set max_text_length = 30 %} {% for entry in history %}
+      {% set max_text_length = 30 %}
+      {% for entry in history %}
       <li>
-        <a href="{{ url_for('result', index=loop.index) }}">
+        <a href="{{ url_for('result', analysis_id=entry.id) }}">
           <strong>Text:</strong>
           {{ entry.text[:max_text_length] }}{% if entry.text|length > max_text_length %}...{% endif %}
           | <strong>Result:</strong> {{ entry.result }}
         </a>
+        <form action="{{ url_for('delete_analysis', analysis_id=entry.id) }}" method="post" style="display:inline;">
+          <button type="submit" class="delete-button">🗑️</button>
+        </form>
       </li>
       {% endfor %}
     </ul>
-
     {% endif %}
-
   </div>
 </body>
 
