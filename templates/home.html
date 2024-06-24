@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Political Text Analysis</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+  <div class="container">
+    <h1>Political Text Analysis</h1>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div class="flash-messages">
+      {% for message in messages %}
+      <p>{{ message }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    <form action="{{ url_for('analyze') }}" method="post">
+      <textarea name="text" rows="10" cols="30" placeholder="Enter text here..."></textarea><br>
+      <button type="submit">Analyze</button>
+    </form>
+    {% if history %}
+    <h2>History</h2>
+    <ul class="history-list">
+      {% set max_text_length = 30 %} {% for entry in history %}
+      <li>
+        <a href="{{ url_for('result', index=loop.index) }}">
+          <strong>Text:</strong>
+          {{ entry.text[:max_text_length] }}{% if entry.text|length > max_text_length %}...{% endif %}
+          | <strong>Result:</strong> {{ entry.result }}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+
+    {% endif %}
+
+  </div>
+</body>
+
+</html>
