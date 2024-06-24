@@ -4,9 +4,15 @@ import torch
 import logging
 from logging.handlers import RotatingFileHandler
 from werkzeug.exceptions import HTTPException
+from models import db, TextAnalysis
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = '##########'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///political_text_analysis.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(app)
 
 handler = RotatingFileHandler('app.log', maxBytes=10000, backupCount=1)
 handler.setLevel(logging.INFO)
@@ -22,13 +28,12 @@ def analyze_text(text):
         outputs = model(**inputs)
     logits = outputs.logits
     probabilities = logits.softmax(dim=-1)[0].tolist()
-    categories = ['left', 'center', 'right']
-    return categories[probabilities.index(max(probabilities))]
+    categories = ['Left', 'Center', 'Right']
+    return categories[probabilities.index(max(probabilities))], max(probabilities)
 
 @app.route('/')
 def home():
-    history = session.get('history', [])
-    history.reverse()
+    history = TextAnalysis.query.order_by(TextAnalysis.timestamp.desc()).limit(10).all()
     return render_template('home.html', history=history)
 
 @app.route('/analyze', methods=['POST'])
@@ -39,28 +44,21 @@ def analyze():
         return redirect(url_for('home'))
 
     try:
-        result = analyze_text(text)
+        result, probability = analyze_text(text)
+        new_analysis = TextAnalysis(text=text, result=result, probability=probability, timestamp=datetime.utcnow())
+        db.session.add(new_analysis)
+        db.session.commit()
     except Exception as e:
         app.logger.error(f"Error analyzing text: {e}")
         flash('An error occurred while analyzing the text. Please try again later.')
         return redirect(url_for('home'))
 
-    history = session.get('history', [])
-    history.append({'text': text, 'result': result})
-    session['history'] = history
+    return redirect(url_for('result', analysis_id=new_analysis.id))
 
-    return redirect(url_for('result', index=len(history)-1))
-
-@app.route('/result/<int:index>')
-def result(index):
-    history = session.get('history', [])
-    if index < 0 or index >= len(history):
-        flash('Invalid history index.')
-        return redirect(url_for('home'))
-
-    entry = history[index]
-    return render_template('result.html', result=entry['result'], text=entry['text'], index=index)
-
+@app.route('/result/<int:analysis_id>')
+def result(analysis_id):
+    analysis = TextAnalysis.query.get_or_404(analysis_id)
+    return render_template('result.html', result=analysis.result, text=analysis.text, probability=analysis.probability)
 
 @app.errorhandler(HTTPException)
 def handle_http_exception(e):
@@ -74,5 +72,20 @@ def handle_exception(e):
     flash('An unexpected error occurred. Please try again later.')
     return redirect(url_for('home'))
 
+@app.route('/delete/<int:analysis_id>', methods=['POST'])
+def delete_analysis(analysis_id):
+    analysis = TextAnalysis.query.get_or_404(analysis_id)
+    try:
+        db.session.delete(analysis)
+        db.session.commit()
+    except Exception as e:
+        app.logger.error(f"Error deleting analysis: {e}")
+        flash('An error occurred while deleting the analysis entry.')
+    return redirect(url_for('home'))
+
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()  
     app.run(debug=True)
+
+    
