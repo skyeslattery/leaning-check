@@ -75,3 +75,21 @@ a:hover {
   margin-bottom: 10px;
   color: red;
 }
+
+.delete-button {
+  background-color: white;
+  color: white;
+  border: none;
+  padding: 1px 1px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 11px;
+  margin: 10px 1px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.delete-button:hover {
+  background-color: lightgray;
+}
