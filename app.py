@@ -6,6 +6,7 @@ from logging.handlers import RotatingFileHandler
 from werkzeug.exceptions import HTTPException
 
 app = Flask(__name__)
+app.secret_key = '##########'
 
 handler = RotatingFileHandler('app.log', maxBytes=10000, backupCount=1)
 handler.setLevel(logging.INFO)
