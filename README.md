@@ -1,4 +1,4 @@
-# Leaning Check
+# Political Lean Check
 Analyze the political lean of text, specifically geared towards tweets. Uses politicalBiasBERT for analysis - https://huggingface.co/bucketresearch/politicalBiasBERT. 
 
 ### Python/Flask for backend, HTML/CSS for frontend. Includes a history of previous analyses, delete functionality, and complete error handling.
